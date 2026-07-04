@@ -180,7 +180,7 @@ header{font-size:24px}
 <header>Senin İçin</header>
 
 <div class="photo-container">
-<img id="mainPhoto" src="foto1.jpg" alt="fotoğraf">
+  <img id="mainPhoto" src="foto1.jpg" alt="fotoğraf" loading="lazy">
 </div>
 
 <div class="controls">
@@ -205,20 +205,21 @@ header{font-size:24px}
 
 </div>
 
-<audio id="audioPlayer" preload="auto"></audio>
+<audio id="audioPlayer" preload="none"></audio>
 
 <script>
 var songs=[
-{title:"Şarkı 1",artist:"Sanatçı 1",audio:"sarki1.mp3",photo:"foto1.jpg",note:"İyi günümde kötü günümde en mutlu anımda en en hüzünlü anımda sadece sen gerek her zaman ve her yerde bana sen gereksin Yanımdan asla ayrılma Bitanem"},
-{title:"Şarkı 2",artist:"Sanatçı 2",audio:"sarki2.mp3",photo:"foto2.jpg",note:"Evimsin Ailemsin Herşeyimsin inşallah ayrılmayız en çıkmaz sokağa girsek bile bir yolunu bulalım çıkalım olaki başaramazsak bu şarkıyı hatırla ;)"},
-{title:"Şarkı 3",artist:"Sanatçı 3",audio:"sarki3.mp3",photo:"foto3.jpg",note:"Sen sırtına bana yasla birbirimizin yanında olalım herşeyin üstesinden geliriz güzelim senin benden benim senden başka kimsemiz yok bunu bilerek hareket edelim ve her konuda birb,r,m,z,n en büyük destekçisi olalım"},
-{title:"Şarkı 4",artist:"Sanatçı 4",audio:"sarki4.mp3",photo:"foto4.jpg",note:"Ya abartma derken neyden bahsediyosun sen kaşına gözüne dudağına ayrı güzel başbaşka aşığım sana deli ediyosun beni Güzelimm Senin gibi güzelliğe sahip olmak için kendimden vzgeçerim ben ya "},
-{title:"Şarkı 5",artist:"Sanatçı 5",audio:"sarki5.mp3",photo:"foto5.jpg",note:"Seni kaybetmekten çok korkuyorum senin hayal ettiğin gibi olmayabilirim ama seni hayal ettiğinden çok seviyorum hiç bir zaman senden vazgeçmicem yarın öleceğimi bilsem bugün yine senin mutlu olman için çabalardım..."},
+{title:"Şarkı 1",artist:"Sanatçı 1",audio:"sarki1.mp3",photo:"foto1.jpg",note:"1. şarkı için notun"},
+{title:"Şarkı 2",artist:"Sanatçı 2",audio:"sarki2.mp3",photo:"foto2.jpg",note:"2. şarkı için notun"},
+{title:"Şarkı 3",artist:"Sanatçı 3",audio:"sarki3.mp3",photo:"foto3.jpg",note:"3. şarkı için notun"},
+{title:"Şarkı 4",artist:"Sanatçı 4",audio:"sarki4.mp3",photo:"foto4.jpg",note:"4. şarkı için notun"},
+{title:"Şarkı 5",artist:"Sanatçı 5",audio:"sarki5.mp3",photo:"foto5.jpg",note:"5. şarkı için notun"},
 ];
 
 var currentIndex = 0;
 var isPlaying = false;
 var noteOpen = false;
+var isLoading = false;
 
 var audio = document.getElementById('audioPlayer');
 var photo = document.getElementById('mainPhoto');
@@ -238,8 +239,16 @@ function loadSong(index){
 var song = songs[index];
 currentIndex = index;
 audio.src = song.audio;
+audio.load();
 photo.src = song.photo;
 noteTextEl.textContent = song.note;
+}
+
+function preloadNext(){
+var i = currentIndex + 1;
+if(i >= songs.length) return;
+var img = new Image();
+img.src = songs[i].photo;
 }
 
 function togglePlay(){
@@ -249,9 +258,10 @@ audio.pause();
 playBtn.textContent = '\u25B6';
 isPlaying = false;
 }else{
-audio.play();
+audio.play().then(function(){
 playBtn.textContent = '\u23F8';
 isPlaying = true;
+}).catch(function(){});
 }
 }
 
@@ -260,9 +270,10 @@ if(noteOpen) return;
 var i = currentIndex - 1;
 if(i < 0) i = songs.length - 1;
 loadSong(i);
-audio.play();
+audio.play().then(function(){
 playBtn.textContent = '\u23F8';
 isPlaying = true;
+}).catch(function(){});
 }
 
 function nextSong(){
@@ -277,9 +288,10 @@ showVideo();
 return;
 }
 loadSong(i);
-audio.play();
+audio.play().then(function(){
 playBtn.textContent = '\u23F8';
 isPlaying = true;
+}).catch(function(){});
 }
 
 function showVideo(){
@@ -317,6 +329,7 @@ showVideo();
 audio.addEventListener('play', function(){
 isPlaying = true;
 playBtn.textContent = '\u23F8';
+preloadNext();
 });
 
 audio.addEventListener('pause', function(){
@@ -324,11 +337,17 @@ isPlaying = false;
 playBtn.textContent = '\u25B6';
 });
 
+audio.addEventListener('waiting', function(){
+playBtn.textContent = '\u23F3';
+});
+
+audio.addEventListener('canplay', function(){
+if(isPlaying) playBtn.textContent = '\u23F8';
+});
+
 audio.addEventListener('error', function(){
-var err = audio.error;
-var msg = 'Dosya yüklenemedi: ' + audio.src;
-if(err) msg += ' (hata: ' + err.code + ')';
-console.error(msg);
+playBtn.textContent = '\u25B6';
+isPlaying = false;
 });
 
 progressBar.addEventListener('click', function(e){
